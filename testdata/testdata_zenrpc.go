@@ -13,22 +13,26 @@ import (
 )
 
 var RPC = struct {
-	ArithService struct{ Sum, Positive, DoSomething, DoSomethingWithPoint, Multiply, CheckError, CheckZenRPCError, Divide, Pow, Pi, SumArray string }
+	ArithService struct{ Sum, Positive, DoSomething, DoSomethingWithPoint, Multiply, CheckError, CheckZenRPCError, CheckEmbeddedStructure, CheckArgWithEmbeddedStructure, CheckEmbeddedPointerStructure, CheckMultipleEmbeddedStructures, Divide, Pow, Pi, SumArray string }
 	PhoneBook    struct{ Get, ValidateSearch, ById, Delete, Remove, Save string }
 	PrintService struct{ PrintRequiredDefault, PrintOptionalWithDefault, PrintRequired, PrintOptional string }
 }{
-	ArithService: struct{ Sum, Positive, DoSomething, DoSomethingWithPoint, Multiply, CheckError, CheckZenRPCError, Divide, Pow, Pi, SumArray string }{
-		Sum:                  "sum",
-		Positive:             "positive",
-		DoSomething:          "dosomething",
-		DoSomethingWithPoint: "dosomethingwithpoint",
-		Multiply:             "multiply",
-		CheckError:           "checkerror",
-		CheckZenRPCError:     "checkzenrpcerror",
-		Divide:               "divide",
-		Pow:                  "pow",
-		Pi:                   "pi",
-		SumArray:             "sumarray",
+	ArithService: struct{ Sum, Positive, DoSomething, DoSomethingWithPoint, Multiply, CheckError, CheckZenRPCError, CheckEmbeddedStructure, CheckArgWithEmbeddedStructure, CheckEmbeddedPointerStructure, CheckMultipleEmbeddedStructures, Divide, Pow, Pi, SumArray string }{
+		Sum:                             "sum",
+		Positive:                        "positive",
+		DoSomething:                     "dosomething",
+		DoSomethingWithPoint:            "dosomethingwithpoint",
+		Multiply:                        "multiply",
+		CheckError:                      "checkerror",
+		CheckZenRPCError:                "checkzenrpcerror",
+		CheckEmbeddedStructure:          "checkembeddedstructure",
+		CheckArgWithEmbeddedStructure:   "checkargwithembeddedstructure",
+		CheckEmbeddedPointerStructure:   "checkembeddedpointerstructure",
+		CheckMultipleEmbeddedStructures: "checkmultipleembeddedstructures",
+		Divide:   "divide",
+		Pow:      "pow",
+		Pi:       "pi",
+		SumArray: "sumarray",
 	},
 	PhoneBook: struct{ Get, ValidateSearch, ById, Delete, Remove, Save string }{
 		Get:            "get",
@@ -154,6 +158,112 @@ func (ArithService) SMD() smd.ServiceInfo {
 				},
 				Errors: map[int]string{
 					500: "test error",
+				},
+			},
+			"CheckEmbeddedStructure": {
+				Description: `CheckEmbedded checks embed structures functionality`,
+				Parameters: []smd.JSONSchema{
+					{
+						Name:        "a",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "b",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+				},
+				Returns: smd.JSONSchema{
+					Description: ``,
+					Optional:    false,
+					Type:        smd.Integer,
+				},
+			},
+			"CheckArgWithEmbeddedStructure": {
+				Description: `CheckEmbedded checks embed structures functionality`,
+				Parameters: []smd.JSONSchema{
+					{
+						Name:        "c",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "a",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "b",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+				},
+				Returns: smd.JSONSchema{
+					Description: ``,
+					Optional:    false,
+					Type:        smd.Integer,
+				},
+			},
+			"CheckEmbeddedPointerStructure": {
+				Description: `CheckEmbedded checks embed pointer structures functionality`,
+				Parameters: []smd.JSONSchema{
+					{
+						Name:        "a",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "b",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+				},
+				Returns: smd.JSONSchema{
+					Description: ``,
+					Optional:    false,
+					Type:        smd.Integer,
+				},
+			},
+			"CheckMultipleEmbeddedStructures": {
+				Description: `CheckEmbedded checks multiple embed structures functionality`,
+				Parameters: []smd.JSONSchema{
+					{
+						Name:        "a",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "b",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "c",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+					{
+						Name:        "d",
+						Optional:    false,
+						Description: ``,
+						Type:        smd.Integer,
+					},
+				},
+				Returns: smd.JSONSchema{
+					Description: ``,
+					Optional:    false,
+					Type:        smd.Integer,
 				},
 			},
 			"Divide": {
@@ -354,6 +464,84 @@ func (s ArithService) Invoke(ctx context.Context, method string, params json.Raw
 		}
 
 		resp.Set(s.CheckZenRPCError(args.IsErr))
+
+	case RPC.ArithService.CheckEmbeddedStructure:
+		var args = struct {
+			EmbeddedChecker
+		}{}
+
+		if zenrpc.IsArray(params) {
+			if params, err = zenrpc.ConvertToObject([]string{"a", "b"}, params); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		if len(params) > 0 {
+			if err := json.Unmarshal(params, &args); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		resp.Set(s.CheckEmbeddedStructure(args.EmbeddedChecker))
+
+	case RPC.ArithService.CheckArgWithEmbeddedStructure:
+		var args = struct {
+			C int `json:"c"`
+			EmbeddedChecker
+		}{}
+
+		if zenrpc.IsArray(params) {
+			if params, err = zenrpc.ConvertToObject([]string{"c", "a", "b"}, params); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		if len(params) > 0 {
+			if err := json.Unmarshal(params, &args); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		resp.Set(s.CheckArgWithEmbeddedStructure(args.C, args.EmbeddedChecker))
+
+	case RPC.ArithService.CheckEmbeddedPointerStructure:
+		var args = struct {
+			*EmbeddedChecker
+		}{}
+
+		if zenrpc.IsArray(params) {
+			if params, err = zenrpc.ConvertToObject([]string{"a", "b"}, params); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		if len(params) > 0 {
+			if err := json.Unmarshal(params, &args); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		resp.Set(s.CheckEmbeddedPointerStructure(args.EmbeddedChecker))
+
+	case RPC.ArithService.CheckMultipleEmbeddedStructures:
+		var args = struct {
+			EmbeddedChecker
+			AnotherEmbeddedChecker
+		}{}
+
+		if zenrpc.IsArray(params) {
+			if params, err = zenrpc.ConvertToObject([]string{"a", "b", "c", "d"}, params); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		if len(params) > 0 {
+			if err := json.Unmarshal(params, &args); err != nil {
+				return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
+			}
+		}
+
+		resp.Set(s.CheckMultipleEmbeddedStructures(args.EmbeddedChecker, args.AnotherEmbeddedChecker))
 
 	case RPC.ArithService.Divide:
 		var args = struct {

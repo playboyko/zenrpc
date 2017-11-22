@@ -54,6 +54,41 @@ func (ArithService) CheckZenRPCError(isErr bool) *zenrpc.Error {
 	return nil
 }
 
+type EmbeddedChecker struct {
+	A int `json:"a"`
+	B int `json:"b"`
+}
+
+// CheckEmbedded checks embed structures functionality
+//zenrpc:embed args
+func (ArithService) CheckEmbeddedStructure(args EmbeddedChecker) int {
+	return args.A + args.B
+}
+
+// CheckEmbedded checks embed structures functionality
+//zenrpc:embed args
+func (ArithService) CheckArgWithEmbeddedStructure(c int, args EmbeddedChecker) int {
+	return args.A + args.B + c
+}
+
+// CheckEmbedded checks embed pointer structures functionality
+//zenrpc:embed args
+func (ArithService) CheckEmbeddedPointerStructure(args *EmbeddedChecker) int {
+	return args.A + args.B
+}
+
+type AnotherEmbeddedChecker struct {
+	C int `json:"c"`
+	D int `json:"d"`
+}
+
+// CheckEmbedded checks multiple embed structures functionality
+//zenrpc:embed args1
+//zenrpc:embed args2
+func (ArithService) CheckMultipleEmbeddedStructures(args1 EmbeddedChecker, args2 AnotherEmbeddedChecker) int {
+	return args1.A + args1.B + args2.C + args2.D
+}
+
 // Quotient docs
 type Quotient struct {
 	// Quo docs

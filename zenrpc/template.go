@@ -91,16 +91,27 @@ var RPC = struct {
 						Description: ` + "`{{.Description}}`" + `,
 						Parameters: []smd.JSONSchema{ 
 						{{- range .Args }}
-							{
-								Name: "{{.Name}}",
-								Optional: {{or .HasStar .HasDefaultValue}},
-								Description: ` + "`{{.Description}}`" + `,
-								{{template "smdType" .SMDType}}
-								{{- if and (eq .SMDType.Type "Object") (ne .SMDType.Ref "")}}
-									{{ template "properties" (index $.Structs .SMDType.Ref).Properties}}
-								{{- end}}
-								{{- template "definitions" definitions .SMDType $.Structs }}
-							},
+							{{- if .Embed}}
+								{{- range $i, $e := (index $.Structs .SMDType.Ref).Properties}}
+									{
+										Name: "{{.Name}}",
+										Optional: false,
+										Description: ` + "`{{.Description}}`" + `,
+										{{template "smdType" .SMDType}}
+									},
+								{{- end }}
+							{{- else }}
+								{
+									Name: "{{.Name}}",
+									Optional: {{or .HasStar .HasDefaultValue}},
+									Description: ` + "`{{.Description}}`" + `,
+									{{template "smdType" .SMDType}}
+									{{- if and (eq .SMDType.Type "Object") (ne .SMDType.Ref "")}}
+										{{ template "properties" (index $.Structs .SMDType.Ref).Properties}}
+									{{- end}}
+									{{- template "definitions" definitions .SMDType $.Structs }}
+								},
+							{{- end }}
 						{{- end }}
 						}, 
 						{{- if .SMDReturn}}
@@ -137,13 +148,22 @@ var RPC = struct {
 			case RPC.{{$s.Name}}.{{.Name}}: {{ if .Args }}
 					var args = struct {
 						{{ range .Args }}
-							{{.CapitalName}} {{if and (not .HasStar) .HasDefaultValue}}*{{end}}{{.Type}} ` + "`json:\"{{.JsonName}}\"`" + `
+							{{if not .Embed}}{{.CapitalName}} {{end}}{{if and (not .HasStar) .HasDefaultValue}}*{{end}}{{.Type}} ` +
+			"{{if not .Embed}}`json:\"{{.JsonName}}\"`{{end}}" + `
 						{{- end }}
 					}{}
 
 					if zenrpc.IsArray(params) {
 						if params, err = zenrpc.ConvertToObject([]string{ 
-							{{- range .Args }}"{{.JsonName}}",{{ end -}} 
+							{{- range .Args -}}
+								{{- if not .Embed -}}
+									"{{.JsonName}}",
+								{{- else -}}
+									{{- range $i, $e := (index $.Structs .SMDType.Ref).Properties -}}
+									"{{.Name}}",
+									{{- end -}}
+								{{- end -}}
+							{{- end -}}
 							}, params); err != nil {
 							return zenrpc.NewResponseError(nil, zenrpc.InvalidParams, err.Error(), nil)
 						}
@@ -164,7 +184,11 @@ var RPC = struct {
 					{{ end }}
 
 				{{ end }} {{if .Returns}}
-					resp.Set(s.{{.Name}}({{if .HasContext}}ctx, {{end}} {{ range .Args }}{{if and (not .HasStar) .HasDefaultValue}}*{{end}}args.{{.CapitalName}}, {{ end }}))
+					resp.Set(s.{{.Name}}({{if .HasContext}}ctx, {{end}}
+					{{- range .Args -}}
+						{{- if and (not .HasStar) .HasDefaultValue}}*{{end -}}
+						args.{{.CapitalName}},
+					{{- end -}}))
 				{{else}}
 					s.{{.Name}}({{if .HasContext}}ctx, {{end}} {{ range .Args }}{{if and (not .HasStar) .HasDefaultValue}}*{{end}}args.{{.CapitalName}}, {{ end }})
 				{{end}}
