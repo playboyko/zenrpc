@@ -79,6 +79,7 @@ type Arg struct {
 	HasDefaultValue bool
 	Description     string // from magic comment
 	SMDType         SMDType
+	Embed           bool
 }
 
 type Return struct {
@@ -565,6 +566,16 @@ func (m *Method) parseComments(doc *ast.CommentGroup, pi *PackageInfo) {
 						m.Args[i].Description = couple[1]
 					}
 
+					break
+				}
+			}
+		} else if couple[0] == "embed" {
+			// instruction to embed this parameter to the final structure
+			// example zenrpc:embed args
+			for i, a := range m.Args {
+				if a.Name == couple[1] {
+					m.Args[i].Embed = true
+					m.Args[i].CapitalName = strings.TrimPrefix(a.Type, "*") // remove star
 					break
 				}
 			}

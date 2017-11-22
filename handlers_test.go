@@ -102,6 +102,30 @@ func TestServer_ServeHTTP(t *testing.T) {
 		{
 			in:  `{"jsonrpc": "2.0", "method": "arith.checkzenrpcerror", "id": 0, "params": [ true ] }`,
 			out: `{"jsonrpc":"2.0","id":0,"error":{"code":500,"message":"test"}}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckEmbeddedStructure", "id": 0, "params": [ 1, 2 ] }`,
+			out: `{"jsonrpc":"2.0","id":0,"result":3}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckEmbeddedStructure", "id": 0, "params": { "a": 1, "b": 2 }}`,
+			out: `{"jsonrpc":"2.0","id":0,"result":3}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckMultipleEmbeddedStructures", "id": 0, "params": [ 1, 2, 3, 4 ] }`,
+			out: `{"jsonrpc":"2.0","id":0,"result":10}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckMultipleEmbeddedStructures", "id": 0, "params": { "a": 1, "b": 2, "c": 3, "d": 4 }}`,
+			out: `{"jsonrpc":"2.0","id":0,"result":10}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckEmbeddedPointerStructure", "id": 0, "params": [ 1, 2 ] }`,
+			out: `{"jsonrpc":"2.0","id":0,"result":3}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckEmbeddedPointerStructure", "id": 0, "params": { "a": 1, "b": 2 }}`,
+			out: `{"jsonrpc":"2.0","id":0,"result":3}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckArgWithEmbeddedStructure", "id": 0, "params": [ 1, 2, 3 ] }`,
+			out: `{"jsonrpc":"2.0","id":0,"result":6}`},
+		{
+			in:  `{"jsonrpc": "2.0", "method": "arith.CheckArgWithEmbeddedStructure", "id": 0, "params": { "a": 1, "b": 2, "c": 3 }}`,
+			out: `{"jsonrpc":"2.0","id":0,"result":6}`},
 	}
 
 	for _, c := range tc {
